@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LinkedIn Profile Posts</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #posts-container {
+            width: 80%;
+            margin: 0 auto;
+        }
+        .post {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .post h3 {
+            margin: 0 0 10px;
+        }
+        .images a {
+            margin-right: 5px;
+            text-decoration: none;
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Select a Profile to View Posts</h1>
+    <div class="card-container">
+        {% for card in cards %}
+        <div class="card" data-url="{{ card }}">
+            <h3>{{ card }}</h3>
+            <p>Click to view posts from this profile.</p>
+        </div>
+        {% endfor %}
+    </div>
+    <div id="posts">
+        <h2>Posts will appear here...</h2>
+    </div>
+    <script>
+        const cards = document.querySelectorAll('.card');
+        const postsContainer = document.getElementById('posts');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                const profileUrl = card.getAttribute('data-url');
+                postsContainer.innerHTML = `<h2>Loading posts for ${profileUrl}...</h2>`;
+                fetch(`/api/profile?url=${encodeURIComponent(profileUrl)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.error) {
+                            postsContainer.innerHTML = `<h2>Error: ${data.error}</h2>`;
+                            return;
+                        }
+                        if(data.length === 0) {
+                            postsContainer.innerHTML = `<h2>No posts found for ${profileUrl}.</h2>`;
+                            return;
+                        }
+                        let html = `<h2>Posts for ${profileUrl}:</h2>`;
+                        data.forEach(post => {
+                            html += `<div class="post">
+                                        <p><strong>Post Number:</strong> ${post.post_number}</p>
+                                        <p><strong>Post:</strong> ${post.post}</p>`;
+                            if(post.images && post.images.length > 0) {
+                                html += `<p><strong>Images:</strong> `;
+                                post.images.forEach(img => {
+                                    html += `<a href="${img}" target="_blank">Link</a> `;
+                                });
+                                html += `</p>`;
+                            }
+                            html += `</div>`;
+                        });
+                        postsContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        postsContainer.innerHTML = `<h2>Error loading posts.</h2>`;
+                        console.error(error);
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
